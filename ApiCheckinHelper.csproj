@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>ApiCheckinHelper</AssemblyName>
+    <RootNamespace>ApiCheckinHelper</RootNamespace>
+    <Product>API 签到助手</Product>
+    <AssemblyTitle>API 签到助手</AssemblyTitle>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <DebugType>none</DebugType>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Tests\**;Core\**;src\**;Uninstaller\**;.tools\**;work\**;work-ui\**" />
+    <None Remove="Tests\**;Core\**;src\**;Uninstaller\**;.tools\**;work\**;work-ui\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="src\ApiCheckinHelper.Core\ApiCheckinHelper.Core.csproj" />
+    <None Include="Ui\Web\index.html;Ui\Web\styles.css;Ui\Web\app.js;Ui\Web\i18n.js;Ui\Web\lucide.min.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="app.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+</Project>

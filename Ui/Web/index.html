@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN" class="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title data-i18n="app.title">API 签到助手</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="lucide.min.js" defer></script>
+  <script src="i18n.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body class="min-h-screen overflow-hidden bg-app text-ink antialiased">
+  <div id="app" class="grid h-screen grid-rows-[auto_minmax(0,1fr)_auto]">
+    <header class="glass-header z-20 border-b border-line/80 px-4 py-3 sm:px-6">
+      <div class="mx-auto flex max-w-[1800px] items-center gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-white shadow-sm">
+            <i data-lucide="circle-check-big" class="h-5 w-5"></i>
+          </div>
+          <div class="min-w-0">
+            <h1 class="truncate text-[15px] font-semibold leading-tight" data-i18n="app.title">API 签到助手</h1>
+            <p id="headerSummary" class="truncate text-xs text-muted" data-i18n="app.loading">正在读取配置</p>
+          </div>
+        </div>
+
+        <div class="mx-auto hidden min-w-0 items-center justify-center gap-2 text-xs text-muted lg:flex">
+          <span id="headerConfigured">0</span>
+          <span class="text-line">/</span>
+          <span id="headerAuto">0</span>
+          <span class="text-line">/</span>
+          <span id="headerManual">0</span>
+        </div>
+
+        <div class="ml-auto flex items-center gap-1.5">
+          <button id="refreshButton" class="icon-button" type="button" data-i18n-aria="btn.refresh" data-i18n-title="btn.refresh">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+          <button id="importButton" class="icon-button" type="button" data-i18n-aria="btn.import" data-i18n-title="btn.import">
+            <i data-lucide="plus"></i>
+          </button>
+          <button id="languageButton" class="icon-button" type="button" data-i18n-aria="settings.language" data-i18n-title="settings.language">
+            <i data-lucide="languages"></i>
+          </button>
+          <button id="themeButton" class="icon-button" type="button" data-i18n-aria="btn.theme" data-i18n-title="btn.theme">
+            <i data-lucide="sun-moon"></i>
+          </button>
+          <button id="settingsButton" class="icon-button" type="button" data-i18n-aria="btn.settings" data-i18n-title="btn.settings">
+            <i data-lucide="settings-2"></i>
+          </button>
+          <button id="cancelButton" class="primary-button icon-text hidden" type="button">
+            <i data-lucide="square"></i>
+            <span data-i18n="btn.stop">停止</span>
+          </button>
+          <button id="runAllButton" class="primary-button icon-text" type="button">
+            <i data-lucide="play"></i>
+            <span data-i18n="btn.runAll">全部签到</span>
+          </button>
+        </div>
+      </div>
+      <div id="progressTrack" class="progress-track mt-3 opacity-0" aria-hidden="true">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+    </header>
+
+    <main class="workspace mx-auto grid min-h-0 w-full max-w-[1800px] gap-3 p-3 sm:gap-4 sm:p-4">
+      <aside class="glass-panel flex min-h-0 flex-col overflow-hidden rounded-xl border border-line/80 shadow-md">
+        <div class="border-b border-line/70 p-3">
+          <div class="flex gap-2">
+            <label class="search-field">
+              <i data-lucide="search"></i>
+              <input id="searchInput" type="search" autocomplete="off" data-i18n-placeholder="search.placeholder" data-i18n-aria="btn.search">
+              <button id="clearSearchButton" class="search-clear" type="button" data-i18n-aria="btn.clearSearch" hidden>
+                <i data-lucide="x"></i>
+              </button>
+            </label>
+            <button id="addToggleButton" class="icon-button soft" type="button" data-i18n-aria="btn.add" data-i18n-title="btn.add">
+              <i data-lucide="plus"></i>
+            </button>
+          </div>
+
+          <div id="filterGroup" class="segmented mt-3" role="tablist" data-i18n-aria="list.sites">
+            <button class="segment active" type="button" data-filter="all" data-i18n="filter.all">全部</button>
+            <button class="segment" type="button" data-filter="ready" data-i18n="filter.ready">可签</button>
+            <button class="segment" type="button" data-filter="problem" data-i18n="filter.problem">待处理</button>
+            <button class="segment" type="button" data-filter="good" data-i18n="filter.good">已完成</button>
+            <button class="segment" type="button" data-filter="todo" data-i18n="filter.todo">待配置</button>
+          </div>
+
+          <div id="addPanel" class="mt-3 hidden rounded-lg border border-line bg-white/55 p-3 dark:bg-black/20">
+            <label class="field-label" for="addHost" data-i18n="add.host">站点地址</label>
+            <input id="addHost" class="text-field" type="text" maxlength="2048" autocomplete="off" data-i18n-placeholder="add.hostHint">
+            <label class="field-label mt-3" for="addName" data-i18n="add.name">显示名称</label>
+            <input id="addName" class="text-field" type="text" maxlength="80" autocomplete="off" data-i18n-placeholder="add.nameHint">
+            <div class="mt-3 flex justify-end gap-2">
+              <button id="probeNewButton" class="secondary-button icon-text" type="button">
+                <i data-lucide="radar"></i>
+                <span data-i18n="btn.probe">探测</span>
+              </button>
+              <button id="addSiteButton" class="primary-button compact" type="button" data-i18n="btn.addSite">添加</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between px-4 pb-2 pt-3 text-xs text-muted">
+          <span data-i18n="list.sites">站点</span>
+          <span id="siteCount">0 / 0</span>
+        </div>
+        <div id="siteList" class="site-list min-h-0 flex-1 overflow-y-auto px-2 pb-3" role="list"></div>
+        <div id="emptyState" class="empty-state px-6 pb-6 text-center">
+          <div class="mx-auto grid h-11 w-11 place-items-center rounded-lg bg-surface-alt text-muted">
+            <i data-lucide="inbox"></i>
+          </div>
+          <p id="emptyTitle" class="mt-3 text-sm font-medium"></p>
+          <p id="emptyCopy" class="mt-1 text-xs leading-5 text-muted"></p>
+        </div>
+      </aside>
+
+      <section class="detail-pane glass-panel min-h-0 overflow-hidden rounded-xl border border-line/80 shadow-md">
+        <div id="detailEmpty" class="grid h-full place-items-center px-8 text-center">
+          <div>
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-xl bg-surface-alt text-muted">
+              <i data-lucide="mouse-pointer-2"></i>
+            </div>
+            <p class="mt-4 text-sm font-medium" data-i18n="detail.empty.title">选择一个站点查看详情</p>
+            <p class="mt-1 text-xs text-muted" data-i18n="detail.empty.copy">也可以在左侧添加新的站点。</p>
+          </div>
+        </div>
+
+        <div id="detailContent" class="hidden h-full overflow-y-auto">
+          <div class="detail-inner">
+            <header class="detail-header">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 id="detailName" class="truncate text-xl font-semibold"></h2>
+                  <span id="detailStatus" class="status-pill"></span>
+                </div>
+                <div class="mt-2 flex items-center gap-2 text-xs text-muted">
+                  <span id="detailHost" class="truncate font-mono"></span>
+                  <button id="openSiteButton" class="inline-icon" type="button" data-i18n-aria="btn.openSite" data-i18n-title="btn.openSite">
+                    <i data-lucide="external-link"></i>
+                  </button>
+                </div>
+                <div id="detailTags" class="mt-3 flex flex-wrap gap-2"></div>
+              </div>
+            </header>
+
+            <section class="detail-section">
+              <div class="section-heading">
+                <div>
+                  <h3 data-i18n="detail.credential.title">凭据</h3>
+                  <p data-i18n="detail.credential.copy">选择类型后保存，程序会自动体检。</p>
+                </div>
+              </div>
+
+              <div class="form-grid mt-4">
+                <div id="tokenGroup" class="field-group">
+                  <label class="field-label" for="tokenField" data-i18n="field.token.label">系统访问令牌</label>
+                  <input id="tokenField" class="text-field mono" type="password" maxlength="4096" autocomplete="off">
+                  <p class="field-hint" data-i18n="field.token.hint">在站点的个人设置中生成，通常以 sk- 开头。</p>
+                </div>
+                <div class="field-group narrow">
+                  <label class="field-label" for="userIdField" data-i18n="field.userId.label">用户 ID</label>
+                  <input id="userIdField" class="text-field" type="number" min="1" max="1000000000" inputmode="numeric" data-i18n-placeholder="field.userId.auto">
+                  <p class="field-hint" data-i18n="field.userId.hint">仅老版本站点需要。</p>
+                </div>
+              </div>
+
+              <p id="formStatus" class="form-status hidden" role="status"></p>
+
+              <div class="action-row mt-4">
+                <button id="saveCredentialButton" class="primary-button icon-text" type="button">
+                  <i data-lucide="save"></i>
+                  <span data-i18n="btn.saveCredential">保存凭据</span>
+                </button>
+                <button id="verifySiteButton" class="secondary-button icon-text" type="button">
+                  <i data-lucide="shield-check"></i>
+                  <span data-i18n="btn.verify">体检</span>
+                </button>
+                <button id="clearCredentialButton" class="ghost-button danger" type="button" data-i18n="btn.clearCredential">清空</button>
+                <span id="currentCredential" class="ml-auto text-xs text-muted"></span>
+              </div>
+            </section>
+
+            <section class="detail-section">
+              <div class="section-heading">
+                <div>
+                  <h3 data-i18n="detail.result.title">最近结果</h3>
+                  <p id="resultTime"></p>
+                </div>
+              </div>
+              <div id="resultBody" class="result-box"></div>
+            </section>
+
+            <section class="detail-section">
+              <div class="section-heading">
+                <div>
+                  <h3 data-i18n="detail.action.title">操作</h3>
+                  <p data-i18n="detail.action.copy">检测、打开、改名或移除当前站点。</p>
+                </div>
+              </div>
+              <div class="action-row">
+                <button id="probeSiteButton" class="secondary-button icon-text" type="button">
+                  <i data-lucide="radar"></i>
+                  <span data-i18n="btn.probeSite">检测站点</span>
+                </button>
+                <button id="renameSiteButton" class="secondary-button icon-text" type="button">
+                  <i data-lucide="pencil"></i>
+                  <span data-i18n="btn.rename">改名</span>
+                </button>
+                <button id="runSiteButton" class="primary-button icon-text" type="button">
+                  <i data-lucide="play"></i>
+                  <span data-i18n="btn.runSite">单独签到</span>
+                </button>
+                <button id="removeSiteButton" class="ghost-button danger icon-text" type="button">
+                  <i data-lucide="trash-2"></i>
+                  <span data-i18n="btn.remove">移除</span>
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="glass-footer z-20 border-t border-line/80 px-4 py-2.5 sm:px-6">
+      <div class="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted">
+        <span id="footerConfigured" class="font-medium text-ink">0 / 0</span>
+        <span id="footerToday">0</span>
+        <span id="footerQuota"></span>
+        <span id="footerProblems">0</span>
+        <span id="footerStatus" class="ml-auto max-w-[42vw] truncate text-right"></span>
+        <button id="openDataButton" class="secondary-button compact icon-text" type="button">
+          <i data-lucide="folder-open"></i>
+          <span data-i18n="btn.dataDir">数据目录</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <span id="toastIcon"></span>
+    <span id="toastText"></span>
+  </div>
+
+  <div id="importOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="modal w-[min(720px,calc(100vw-32px))]">
+      <div class="modal-header">
+        <div>
+          <h2 id="importTitle" data-i18n="import.title">新增站点</h2>
+          <p data-i18n="import.copy">填写新的站点地址和访问令牌，保存后自动体检。</p>
+        </div>
+        <button class="icon-button" type="button" data-close="importOverlay" data-i18n-aria="btn.close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="importFormPane">
+          <div id="importInputs" class="space-y-4"></div>
+          <button id="addImportRowButton" class="ghost-button icon-text mt-3" type="button">
+            <i data-lucide="plus"></i>
+            <span data-i18n="btn.addGroup">再添加一个站点</span>
+          </button>
+        </div>
+        <p id="importStatus" class="form-status hidden" role="status"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="clearCredentialsButton" class="ghost-button danger" type="button" data-i18n="btn.clearAll">清空全部凭据</button>
+        <span class="flex-1"></span>
+        <button class="secondary-button" type="button" data-close="importOverlay" data-i18n="btn.cancel">取消</button>
+        <button id="importConfirmButton" class="primary-button icon-text" type="button">
+          <i data-lucide="plus"></i>
+          <span data-i18n="btn.importNow">新增并体检</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal w-[min(520px,calc(100vw-32px))]">
+      <div class="modal-header">
+        <div>
+          <h2 id="settingsTitle" data-i18n="settings.title">设置</h2>
+          <p data-i18n="settings.copy">并发、超时与外观。</p>
+        </div>
+        <button class="icon-button" type="button" data-close="settingsOverlay" data-i18n-aria="btn.close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body settings-grid">
+        <label class="field-group">
+          <span class="field-label" data-i18n="settings.concurrency">并发数</span>
+          <input id="settingConcurrency" class="text-field" type="number" min="1" max="6">
+          <span class="field-hint" data-i18n="settings.concurrencyHint">同时发请求的站点数量。</span>
+        </label>
+        <label class="field-group">
+          <span class="field-label" data-i18n="settings.timeout">请求超时（秒）</span>
+          <input id="settingTimeout" class="text-field" type="number" min="5" max="60" step="1">
+          <span class="field-hint" data-i18n="settings.timeoutHint">单个站点的最长等待时间。</span>
+        </label>
+        <label class="field-group">
+          <span class="field-label" data-i18n="settings.theme">主题</span>
+          <select id="settingTheme" class="text-field">
+            <option value="auto" data-i18n="settings.themeAuto">跟随系统</option>
+            <option value="light" data-i18n="settings.themeLight">浅色</option>
+            <option value="dark" data-i18n="settings.themeDark">深色</option>
+          </select>
+        </label>
+        <label class="field-group">
+          <span class="field-label" data-i18n="settings.language">界面语言</span>
+          <select id="settingLanguage" class="text-field">
+            <option value="auto" data-i18n="settings.languageAuto">跟随系统</option>
+            <option value="zh-cn">简体中文</option>
+            <option value="en-us">English</option>
+          </select>
+        </label>
+        <label class="toggle-row">
+          <span>
+            <strong data-i18n="settings.notify">结束提示</strong>
+            <small data-i18n="settings.notifyHint">签到完成后显示结果</small>
+          </span>
+          <input id="settingNotify" type="checkbox">
+        </label>
+        <label class="toggle-row">
+          <span>
+            <strong data-i18n="settings.skipManual">跳过人机验证站点</strong>
+            <small data-i18n="settings.skipManualHint">需要 Turnstile 的站点只标记，不自动提交</small>
+          </span>
+          <input id="settingSkipManual" type="checkbox">
+        </label>
+      </div>
+      <div class="modal-footer">
+        <span class="flex-1"></span>
+        <button class="secondary-button" type="button" data-close="settingsOverlay" data-i18n="btn.cancel">取消</button>
+        <button id="saveSettingsButton" class="primary-button" type="button" data-i18n="btn.save">保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal w-[min(430px,calc(100vw-32px))]">
+      <div class="modal-header">
+        <div>
+          <h2 id="confirmTitle" data-i18n="confirm.title">确认操作</h2>
+          <p id="confirmCopy"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="flex-1"></span>
+        <button id="confirmCancelButton" class="secondary-button" type="button" data-i18n="btn.cancel">取消</button>
+        <button id="confirmAcceptButton" class="primary-button danger-solid" type="button" data-i18n="btn.accept">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="promptOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="promptTitle">
+    <div class="modal w-[min(460px,calc(100vw-32px))]">
+      <div class="modal-header">
+        <div>
+          <h2 id="promptTitle" data-i18n="prompt.title">输入</h2>
+          <p id="promptCopy"></p>
+        </div>
+        <button class="icon-button" type="button" data-close="promptOverlay" data-i18n-aria="btn.close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input id="promptInput" class="text-field" type="text" maxlength="80">
+        <p id="promptStatus" class="form-status hidden"></p>
+      </div>
+      <div class="modal-footer">
+        <span class="flex-1"></span>
+        <button id="promptCancelButton" class="secondary-button" type="button" data-i18n="btn.cancel">取消</button>
+        <button id="promptAcceptButton" class="primary-button" type="button" data-i18n="btn.accept">确定</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

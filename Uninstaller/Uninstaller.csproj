@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>uninstall</AssemblyName>
+    <RootNamespace>ApiCheckinHelper.Uninstaller</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <DebugType>none</DebugType>
+    <ApplicationIcon>..\app.ico</ApplicationIcon>
+  </PropertyGroup>
+</Project>

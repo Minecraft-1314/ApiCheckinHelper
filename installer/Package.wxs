@@ -1,0 +1,71 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="API 签到助手"
+    Manufacturer="ApiCheckinHelper"
+    Version="$(var.ProductVersion)"
+    ProductCode="{1DF411B6-7B13-4033-9536-AA3BFFEDBE3F}"
+    UpgradeCode="{CC94FF7E-2FCA-45DD-A504-9E5A55A73B2D}"
+    Scope="perMachine"
+    Compressed="yes">
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed. / 已安装更新版本。" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="mszip" />
+    <Icon Id="AppIcon" SourceFile="$(var.IconSource)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="ApiCheckinHelper">
+        <Component Id="AppRuntime" Guid="{73D0FD48-BD08-4A40-AD17-41B6DD5027D3}">
+          <File Id="AppExe" Source="$(var.AppSource)\ApiCheckinHelper.exe" KeyPath="yes" />
+          <File Source="$(var.AppSource)\D3DCompiler_47_cor3.dll" />
+          <File Source="$(var.AppSource)\PenImc_cor3.dll" />
+          <File Source="$(var.AppSource)\PresentationNative_cor3.dll" />
+          <File Source="$(var.AppSource)\vcruntime140_cor3.dll" />
+          <File Source="$(var.AppSource)\WebView2Loader.dll" />
+          <File Source="$(var.AppSource)\wpfgfx_cor3.dll" />
+          <File Source="$(var.AppSource)\app.ico" />
+        </Component>
+        <Directory Id="RuntimesFolder" Name="runtimes">
+          <Directory Id="RuntimesWinX64Folder" Name="win-x64">
+            <Directory Id="RuntimesNativeFolder" Name="native">
+              <Component Id="RuntimesNative" Guid="{7A674E16-FA03-49F5-B224-2F4039D4AF78}">
+                <File Source="$(var.AppSource)\runtimes\win-x64\native\WebView2Loader.dll" KeyPath="yes" />
+              </Component>
+            </Directory>
+          </Directory>
+        </Directory>
+        <Directory Id="UiFolder" Name="Ui">
+          <Directory Id="UiWebFolder" Name="Web">
+            <Component Id="UiWeb" Guid="{4D9D53AD-B50C-4D69-82BD-B4A4BDD1E8FB}">
+              <File Id="UiIndex" Source="$(var.AppSource)\Ui\Web\index.html" KeyPath="yes" />
+              <File Source="$(var.AppSource)\Ui\Web\styles.css" />
+              <File Source="$(var.AppSource)\Ui\Web\app.js" />
+              <File Source="$(var.AppSource)\Ui\Web\i18n.js" />
+              <File Source="$(var.AppSource)\Ui\Web\lucide.min.js" />
+            </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="{9A0FFFF6-6085-46C3-9C8F-51C79A7C6E1B}">
+        <Shortcut
+          Id="StartMenuShortcutLink"
+          Name="API 签到助手"
+          Target="[INSTALLFOLDER]ApiCheckinHelper.exe"
+          WorkingDirectory="INSTALLFOLDER" />
+        <RemoveFolder Id="RemoveStartMenuFolder" Directory="ProgramMenuFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\ApiCheckinHelper" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="API 签到助手" Level="1">
+      <ComponentRef Id="AppRuntime" />
+      <ComponentRef Id="RuntimesNative" />
+      <ComponentRef Id="UiWeb" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+  </Package>
+</Wix>
